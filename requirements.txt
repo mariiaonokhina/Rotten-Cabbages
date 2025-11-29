@@ -3,5 +3,4 @@ uvicorn
 pandas
 numpy
 scikit-learn
-python-multipart
 rapidfuzz

@@ -4,4 +4,3 @@ pandas
 numpy
 scikit-learn
 rapidfuzz
-tensorflow==2.17.0

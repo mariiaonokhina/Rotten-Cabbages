@@ -1,0 +1,77 @@
+:root{
+  --bg:#0f172a;          /* dark blue-ish */
+  --bg-elev:#111827;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --accent:#60a5fa;      /* blue */
+  --card:#1f2937;
+  --border:#334155;
+}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
+
+.container{max-width:1100px; margin:80px auto 64px; padding:0 16px}
+
+/* Sticky navbar */
+.navbar{
+  position:sticky; top:0; z-index:20;
+  background:rgba(15,23,42,.85); backdrop-filter: blur(8px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{max-width:1100px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between}
+.logo{color:var(--text); text-decoration:none; font-weight:800; letter-spacing:.3px}
+.nav-links a{color:var(--muted); text-decoration:none; margin-left:16px}
+.nav-links a:hover{color:var(--text)}
+
+/* Hero */
+.hero{display:flex; flex-direction:column; gap:12px; align-items:center; padding:24px 0 8px}
+.hero-title{margin:0 0 8px 0}
+
+/* Search */
+.search-wrap{position:relative; width:min(720px,100%)}
+.search-input{
+  width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--border);
+  background:var(--bg-elev); color:var(--text); outline:none;
+}
+.autocomplete{
+  position:absolute; inset:auto 0 0 0; transform:translateY(8px);
+  background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+}
+.ac-item{display:flex; gap:12px; align-items:center; padding:10px 12px; cursor:pointer}
+.ac-item:hover{background:#0b1220}
+.poster-skel{width:48px; height:68px; background:#1f2a44; border-radius:8px}
+.poster-skel.large{width:180px; height:260px}
+.ac-text{display:flex; flex-direction:column}
+.ac-title{font-weight:600}
+.ac-sub{color:var(--muted); font-size:12px}
+
+/* Sections */
+.section{margin-top:28px}
+.section-title{margin:0 0 14px 2px}
+
+/* Carousel (scroll-snap) */
+.carousel{
+  display:grid; grid-auto-flow:column; grid-auto-columns:200px;
+  gap:14px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory;
+}
+.carousel .card{scroll-snap-align:start}
+
+/* Cards */
+.card{display:flex; flex-direction:column; background:var(--card); border:1px solid var(--border); border-radius:14px; text-decoration:none; color:inherit}
+.card-body{padding:10px 12px}
+.card-title{font-weight:600}
+.card-sub{color:var(--muted); font-size:12px}
+
+/* Movie page */
+.movie-hero{display:grid; grid-template-columns:180px 1fr; gap:18px; align-items:start; margin-top:8px}
+.hero-poster{width:180px; height:260px; border-radius:12px}
+.movie-title{margin:0}
+.movie-genres{color:var(--muted); margin:6px 0 10px}
+.movie-overview{line-height:1.5; color:#d1d5db}
+
+/* Grid for recs */
+.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:14px}
+
+.loading{color:var(--muted); padding:20px}

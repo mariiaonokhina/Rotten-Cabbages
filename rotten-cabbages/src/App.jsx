@@ -13,13 +13,8 @@ function Layout() {
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-text">
-            <div>Rotten Cabbages - A movie recommendation system</div>
-            <div>Built with React & FastAPI</div>
+            <div>2025. Rotten Cabbages - A movie recommendation system</div>
           </div>
-          <a href="https://github.com" target="_blank" rel="noreferrer" className="footer-link">
-            <span>View on GitHub</span>
-            <span>🐙</span>
-          </a>
         </div>
       </footer>
     </div>

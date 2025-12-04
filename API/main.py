@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import json
 import os
-import tensorflow as tf
+import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import Normalizer
@@ -269,15 +269,20 @@ print(f"Prepared {len(movie_titles_list)} movie titles for fuzzy search")
 # Build content-based similarity matrix (from content_based_filtering notebook)
 print("Building content-based similarity matrix...")
 try:
-    # Combine all content into a single text field (same as notebook)
+    # Combine all content into a single text field with weighted importance
+    # Genres are repeated 4x to give them more weight in similarity calculations
+    # Production companies are repeated 2x to give them more weight
     movies["combined_content"] = (
         movies["genres"].astype(str) + " " +
+        movies["genres"].astype(str) + " " +  # Repeat genres for extra weight
+        movies["genres"].astype(str) + " " +  # Repeat genres again
+        movies["genres"].astype(str) + " " +  # Repeat genres one more time (4x total)
         movies["keywords"].astype(str) + " " +
         movies["overview"].astype(str) + " " +
         movies["production_companies"].astype(str) + " " +
+        movies["production_companies"].astype(str) + " " +  # Repeat production companies for 2x weight
         movies["tagline"].astype(str) + " " +
-        movies["cast"].astype(str) + " " +
-        movies["crew"].astype(str)
+        movies["cast"].astype(str)
     )
     
     # Convert to lowercase and clean
@@ -299,6 +304,7 @@ try:
     
     print(f"✓ Content-based similarity matrix built: {similarity_matrix.shape}")
     print(f"  Using TF-IDF + SVD (150 components) + Cosine Similarity")
+    print(f"  Genres weighted 4x, Production companies weighted 2x")
 except Exception as e:
     print(f"⚠ Error building similarity matrix: {e}")
     import traceback
@@ -389,29 +395,67 @@ def get_movie(tmdb_id: int):
 @app.get("/suggest")
 def suggest_movies(query: str, limit: int = 10):
     """
-    Search for movies using fuzzy matching (typo-tolerant).
-    Returns movies with poster URLs.
+    Search for movies with improved relevance ranking.
+    Prioritizes exact/prefix matches, then word matches, then fuzzy matches.
     """
     if not query or len(query.strip()) < 2:
         return []
     
-    query = query.strip()
+    query = query.strip().lower()
+    query_words = query.split()
     
-    # Use rapidfuzz for fuzzy matching (typo-tolerant)
-    # Find best matches with score threshold
-    matches = process.extract(
-        query,
-        movie_titles_list,
-        limit=limit * 2,  # Get more candidates to filter
-        scorer=fuzz.WRatio  # Weighted ratio for better typo tolerance
-    )
+    # Categorize matches by relevance
+    exact_start_matches = []  # Titles that start with query
+    word_matches = []  # Titles that contain query as a word
+    fuzzy_matches = []  # Fuzzy matches with higher threshold
     
-    # Filter by minimum similarity score (60% similarity)
-    min_score = 60
-    filtered_matches = [(title, score, idx) for title, score, idx in matches if score >= min_score]
+    for idx, title in enumerate(movie_titles_list):
+        title_lower = str(title).lower()
+        
+        # Priority 1: Exact start match (case-insensitive)
+        if title_lower.startswith(query):
+            exact_start_matches.append((title, 100, idx))
+        # Priority 2: Word boundary match (query appears as a complete word)
+        else:
+            # Check if query appears as a whole word
+            word_pattern = r'\b' + re.escape(query) + r'\b'
+            if re.search(word_pattern, title_lower):
+                word_matches.append((title, 90, idx))
+            # Check if individual query words appear as whole words
+            elif len(query_words) > 1:
+                matching_words = sum(1 for word in query_words if len(word) >= 3 and re.search(r'\b' + re.escape(word) + r'\b', title_lower))
+                if matching_words > 0:
+                    word_matches.append((title, 80 + matching_words * 5, idx))
+            # Priority 3: Fuzzy match with stricter threshold
+            else:
+                # Use token_sort_ratio which is better for word order independence
+                # but still requires the words to be present (stricter than WRatio)
+                score = fuzz.token_sort_ratio(query, title_lower)
+                # Also check that query isn't just embedded in a longer word
+                # (e.g., "fight" shouldn't match "Foodfight" well)
+                if score >= 80:  # Higher threshold for stricter matching
+                    # Additional check: if query is short, require it to be a word boundary
+                    if len(query) <= 5:
+                        # For short queries, be extra strict - require word boundary
+                        if not re.search(r'\b' + re.escape(query) + r'\b', title_lower):
+                            # If no word boundary match, use even higher threshold
+                            if score < 90:
+                                continue
+                    fuzzy_matches.append((title, score, idx))
+    
+    # Combine and sort: exact start > word match > fuzzy match
+    all_matches = exact_start_matches + word_matches + sorted(fuzzy_matches, key=lambda x: x[1], reverse=True)
+    
+    # Remove duplicates (keep first occurrence)
+    seen_titles = set()
+    unique_matches = []
+    for title, score, idx in all_matches:
+        if title not in seen_titles:
+            seen_titles.add(title)
+            unique_matches.append((title, score, idx))
     
     # Limit results
-    filtered_matches = filtered_matches[:limit]
+    filtered_matches = unique_matches[:limit]
     
     # Build response with poster URLs
     result = []

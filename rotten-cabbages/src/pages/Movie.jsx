@@ -112,7 +112,7 @@ export default function Movie() {
       {recs.length > 0 && (
         <section className="section">
           <h2 className="section-title">Users Also Watched</h2>
-          <div className="grid">
+          <div className="grid grid-users-also-watched">
             {recs.map(m => <MovieCard key={m.tmdb_id} m={m} />)}
           </div>
         </section>
